@@ -1,0 +1,11 @@
+{
+  "name": "13ed3",
+  "description": "equal-tempered Bohlen-Pierce, with 9 naturals",
+  "naturals": [292.61, 438.91, 585.22, 877.83, 1024.13, 1316.74, 1463.04, 1755.65, 1901.96],
+  "accidentals": {
+    "SHARP": 146.30,
+    "FLAT": -146.30,
+    "SHARP2": 292.61,
+    "FLAT2": -292.61
+  }
+}
