@@ -13,7 +13,7 @@ MuseScore {
   height: 233
   Button {
     id: "loadButton"
-    text: "Load tuning file"
+    text: "Select tuning file"
     anchors.centerIn: parent
     onClicked: {
       fileDialog.open();
@@ -22,7 +22,7 @@ MuseScore {
   Button {
     anchors.bottom: parent.bottom
     anchors.left: parent.left
-    text: "Quit"
+    text: "Cancel"
     onClicked: {
       Qt.quit();
     }
@@ -30,14 +30,20 @@ MuseScore {
   Button {
     anchors.bottom: parent.bottom
     anchors.right: parent.right
-    text: "Read file and apply to score"
+    text: "Apply selected tuning to score"
     onClicked: {
-      var tuningData = parseFileContent(tuningFile.read());
+      var tuningData = parseTuningFileContent(tuningFile.read());
       console.log("tuningData: " + JSON.stringify(tuningData));
       applyToNotesInSelection(function(note) {
         tuneNote(note, tuningData);
       });
+      Qt.quit();
     }
+  }
+  Text {
+    id: "fileLabel"
+    width: parent.width
+    wrapMode: Text.WrapAnywhere
   }
   function getNatural(pitch, tpc) {
     // since which natural (A-G) isn't directly available, need to compute it
@@ -47,7 +53,7 @@ MuseScore {
     var numOctaves = Math.round((pitch - firstOctavePitch) / 12);
     return answerMod7 + numOctaves * 7;
   }
-  function parseFileContent(fileContent) {
+  function parseTuningFileContent(fileContent) {
     var obj = JSON.parse(fileContent);
     if (!obj.naturals) {
       throw "No naturals found";
@@ -94,11 +100,25 @@ MuseScore {
     var relative = absolute - (note.pitch - 60) * 100;
     note.tuning = relative;
   }
+  function loadSettings() {
+    var fileContent = settingsFile.read();
+    var obj = JSON.parse(fileContent);
+    if (obj.hasOwnProperty("tuningFile")) {
+      tuningFile.source = obj.tuningFile;
+      fileLabel.text = "Tuning file: " + obj.tuningFile;
+    }
+  }
+  function writeSettings(settings) {
+    settingsFile.write(JSON.stringify(settings));
+  }
   FileDialog {
     id: fileDialog
     title: "Please choose a file"
+    folder: shortcuts.home
     onAccepted: {
         tuningFile.source = fileDialog.fileUrl;
+        fileLabel.text = "Tuning file: " + fileDialog.fileUrl;
+        writeSettings({tuningFile: "" + fileDialog.fileUrl});
     }
     onRejected: {
     }
@@ -109,7 +129,21 @@ MuseScore {
       console.log(msg);
     }
   }
+  FileIO {
+    id: "settingsFile"
+    source: homePath() + "/.musescore-xentuner-settings.json"
+    onError: {
+      console.log(msg);
+    }
+  }
   onRun: {
+  }
+  Component.onCompleted: {
+    if (settingsFile.exists()) {
+      loadSettings();
+    } else {
+      fileLabel.text = "No file selected";
+    }
   }
 
         // from colornotes.qml, GPL2 licensed
