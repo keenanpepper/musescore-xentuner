@@ -34,8 +34,8 @@ MuseScore {
     onClicked: {
       var tuningData = parseTuningFileContent(tuningFile.read());
       console.log("tuningData: " + JSON.stringify(tuningData));
-      applyToNotesInSelection(function(note) {
-        tuneNote(note, tuningData);
+      applyToNotesInSelection(function(note, accidentalMap) {
+        tuneNote(note, tuningData, accidentalMap);
       });
       Qt.quit();
     }
@@ -147,6 +147,7 @@ MuseScore {
   }
 
         // from colornotes.qml, GPL2 licensed
+        // modified to carry over accidentals within a measure
         function applyToNotesInSelection(func) {
             var cursor = curScore.newCursor();
             cursor.rewind(1);
@@ -154,6 +155,7 @@ MuseScore {
             var endStaff;
             var endTick;
             var fullScore = false;
+            var accidentalMap = {};
             if (!cursor.segment) { // no selection
                   fullScore = true;
                   startStaff = 0; // start with 1st staff
@@ -189,13 +191,16 @@ MuseScore {
                                           // iterate through all grace chords
                                           var graceNotes = graceChords[i].notes;
                                           for (var j = 0; j < graceNotes.length; j++)
-                                                func(graceNotes[j]);
+                                                func(graceNotes[j], accidentalMap);
                                     }
                                     var notes = cursor.element.notes;
                                     for (var k = 0; k < notes.length; k++) {
                                           var note = notes[k];
-                                          func(note);
+                                          func(note, accidentalMap);
                                     }
+                              }
+                              if (cursor.element && cursor.element.type === Element.BAR_LINE) {
+                                    console.log("Resetting accidentals at bar line");
                               }
                               cursor.next();
                         }
