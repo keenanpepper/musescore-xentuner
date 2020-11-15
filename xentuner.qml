@@ -94,11 +94,31 @@ MuseScore {
     var namesList = ["NONE","FLAT","NATURAL","SHARP","SHARP2","FLAT2","NATURAL_FLAT","NATURAL_SHARP","SHARP_SHARP","FLAT_ARROW_UP","FLAT_ARROW_DOWN","NATURAL_ARROW_UP","NATURAL_ARROW_DOWN","SHARP_ARROW_UP","SHARP_ARROW_DOWN","SHARP2_ARROW_UP","SHARP2_ARROW_DOWN","FLAT2_ARROW_UP","FLAT2_ARROW_DOWN","MIRRORED_FLAT","MIRRORED_FLAT2","SHARP_SLASH","SHARP_SLASH4","FLAT_SLASH2","FLAT_SLASH","SHARP_SLASH3","SHARP_SLASH2","DOUBLE_FLAT_ONE_ARROW_DOWN","FLAT_ONE_ARROW_DOWN","NATURAL_ONE_ARROW_DOWN","SHARP_ONE_ARROW_DOWN","DOUBLE_SHARP_ONE_ARROW_DOWN","DOUBLE_FLAT_ONE_ARROW_UP","FLAT_ONE_ARROW_UP","NATURAL_ONE_ARROW_UP","SHARP_ONE_ARROW_UP","DOUBLE_SHARP_ONE_ARROW_UP","DOUBLE_FLAT_TWO_ARROWS_DOWN","FLAT_TWO_ARROWS_DOWN","NATURAL_TWO_ARROWS_DOWN","SHARP_TWO_ARROWS_DOWN","DOUBLE_SHARP_TWO_ARROWS_DOWN","DOUBLE_FLAT_TWO_ARROWS_UP","FLAT_TWO_ARROWS_UP","NATURAL_TWO_ARROWS_UP","SHARP_TWO_ARROWS_UP","DOUBLE_SHARP_TWO_ARROWS_UP","DOUBLE_FLAT_THREE_ARROWS_DOWN","FLAT_THREE_ARROWS_DOWN","NATURAL_THREE_ARROWS_DOWN","SHARP_THREE_ARROWS_DOWN","DOUBLE_SHARP_THREE_ARROWS_DOWN","DOUBLE_FLAT_THREE_ARROWS_UP","FLAT_THREE_ARROWS_UP","NATURAL_THREE_ARROWS_UP","SHARP_THREE_ARROWS_UP","DOUBLE_SHARP_THREE_ARROWS_UP","LOWER_ONE_SEPTIMAL_COMMA","RAISE_ONE_SEPTIMAL_COMMA","LOWER_TWO_SEPTIMAL_COMMAS","RAISE_TWO_SEPTIMAL_COMMAS","LOWER_ONE_UNDECIMAL_QUARTERTONE","RAISE_ONE_UNDECIMAL_QUARTERTONE","LOWER_ONE_TRIDECIMAL_QUARTERTONE","RAISE_ONE_TRIDECIMAL_QUARTERTONE","DOUBLE_FLAT_EQUAL_TEMPERED","FLAT_EQUAL_TEMPERED","NATURAL_EQUAL_TEMPERED","SHARP_EQUAL_TEMPERED","DOUBLE_SHARP_EQUAL_TEMPERED","QUARTER_FLAT_EQUAL_TEMPERED","QUARTER_SHARP_EQUAL_TEMPERED","SORI","KORON"];
     return namesList[0+accidentalType];
   }
-  function tuneNote(note, tuningData) {
-    console.log("pitch: " + note.pitch, ", tpc: " + note.tpc, " accidentalType: " + note.accidentalType, " natural: " + getNatural(note.pitch, note.tpc));
-    var absolute = computeTuning(getNatural(note.pitch, note.tpc), note.accidentalType, tuningData);
+  function tuneNote(note, tuningData, accidentalMap) {
+    var natural = getNatural(note.pitch, note.tpc);
+    var effectiveAccidental = note.accidentalType;
+    if (note.accidentalType == Accidental.NONE) {
+      if (accidentalMap.hasOwnProperty(natural)) {
+        effectiveAccidental = accidentalMap[natural];
+      } else {
+        var tiedNote = note;
+        while (effectiveAccidental == Accidental.NONE) {
+          if (tiedNote.tieBack) {
+            tiedNote = tiedNote.tieBack.startNote;
+            effectiveAccidental = tiedNote.accidentalType;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+    console.log("pitch: " + note.pitch, ", tpc: " + note.tpc, " accidentalType: " + note.accidentalType, "effectiveAccidental: " + effectiveAccidental, "natural: " + natural);
+    var absolute = computeTuning(natural, effectiveAccidental, tuningData);
     var relative = absolute - (note.pitch - 60) * 100;
     note.tuning = relative;
+    
+    // record the accidental of this natural for later unmarked pitches in this measure
+    accidentalMap[natural] = effectiveAccidental;
   }
   function loadSettings() {
     var fileContent = settingsFile.read();
@@ -150,6 +170,7 @@ MuseScore {
         // modified to carry over accidentals within a measure
         function applyToNotesInSelection(func) {
             var cursor = curScore.newCursor();
+            cursor.filter = Segment.ChordRest | Segment.BarLineType;
             cursor.rewind(1);
             var startStaff;
             var endStaff;
@@ -201,6 +222,7 @@ MuseScore {
                               }
                               if (cursor.element && cursor.element.type === Element.BAR_LINE) {
                                     console.log("Resetting accidentals at bar line");
+                                    accidentalMap = {};
                               }
                               cursor.next();
                         }
