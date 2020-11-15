@@ -34,9 +34,7 @@ MuseScore {
     onClicked: {
       var tuningData = parseTuningFileContent(tuningFile.read());
       console.log("tuningData: " + JSON.stringify(tuningData));
-      applyToNotesInSelection(function(note, accidentalMap) {
-        tuneNote(note, tuningData, accidentalMap);
-      });
+      processSelection(tuningData);
       Qt.quit();
     }
   }
@@ -166,68 +164,167 @@ MuseScore {
     }
   }
 
-        // from colornotes.qml, GPL2 licensed
-        // modified to carry over accidentals within a measure
-        function applyToNotesInSelection(func) {
-            var cursor = curScore.newCursor();
-            cursor.filter = Segment.ChordRest | Segment.BarLineType;
-            cursor.rewind(1);
+  function processNote(note, curMeasureArray, tuningData) {
+    tuneNote(note, tuningData, curMeasureArray);
+  }
+
+      // from addCourtesyAccidentals.qml, GPLv3
+
+      // if nothing is selected process whole score
+      property bool processAll: false
+
+      // function getEndStaffOfPart
+      //
+      // return the first staff that does not belong to
+      // the part containing given start staff.
+
+      function getEndStaffOfPart(startStaff) {
+            var startTrack = startStaff * 4;
+            var parts = curScore.parts;
+
+            for(var i = 0; i < parts.length; i++) {
+                  var part = parts[i];
+
+                  if( (part.startTrack <= startTrack)
+                        && (part.endTrack > startTrack) ) {
+                        return(part.endTrack/4);
+                  }
+            }
+
+            // not found!
+            console.log("error: part for " + startStaff + " not found!");
+            Qt.quit();
+      }
+
+      // function processPart
+      //
+      // do the actual work: process all given tracks in parallel
+      //
+      // We go through all tracks simultaneously, because we also want to tune
+      // accidentals for notes of different voices in the same octave
+
+      function processPart(cursor,endTick,startTrack,endTrack,tuningData) {
+            if(processAll) {
+                  // we need to reset track first, otherwise
+                  // rewind(0) doesn't work correctly
+                  cursor.track=0;
+                  cursor.rewind(0);
+            } else {
+                  cursor.rewind(1);
+            }
+
+            var segment = cursor.segment;
+
+            // we use the cursor to know measure boundaries
+            cursor.nextMeasure();
+
+            var curMeasureArray = new Array();
+
+            // we use a segment, because the cursor always proceeds to
+            // the next element in the given track and we don't know
+            // in which track the element is.
+            var inLastMeasure=false;
+            while(segment && (processAll || segment.tick < endTick)) {
+                  // check if still inside same measure
+                  if(!inLastMeasure && !(segment.tick < cursor.tick)) {
+                        // new measure
+                        curMeasureArray = new Array();
+                        if(!cursor.nextMeasure()) {
+                              inLastMeasure=true;
+                        }
+                  }
+
+                  for(var track=startTrack; track<endTrack; track++) {
+
+                        // look for notes and grace notes
+                        if(segment.elementAt(track) && segment.elementAt(track).type == Element.CHORD) {
+                              // process graceNotes if present
+                              if(segment.elementAt(track).graceNotes.length > 0) {
+                                    var graceChords = segment.elementAt(track).graceNotes;
+
+                                    for(var j=0;j<graceChords.length;j++) {
+                                          var notes = graceChords[j].notes;
+                                          for(var i=0;i<notes.length;i++) {
+                                                processNote(notes[i],curMeasureArray,tuningData);
+                                          }
+                                    }
+                              }
+
+                              // process notes
+                              var notes = segment.elementAt(track).notes;
+
+                              for(var i=0;i<notes.length;i++) {
+                                    processNote(notes[i],curMeasureArray,tuningData);
+                              }
+                        }
+                  }
+                  segment=segment.next;
+            }
+      }
+
+      function processSelection(tuningData) {
+            console.log("start process selection");
+
+            //curScore.startCmd();
+
+             if (typeof curScore === 'undefined' || curScore == null) {
+                   console.log("error: no score!");
+                   Qt.quit();
+             }
+
+            // find selection
             var startStaff;
             var endStaff;
             var endTick;
-            var fullScore = false;
-            var accidentalMap = {};
-            if (!cursor.segment) { // no selection
-                  fullScore = true;
-                  startStaff = 0; // start with 1st staff
-                  endStaff = curScore.nstaves - 1; // and end with last
+
+            var cursor = curScore.newCursor();
+            cursor.rewind(1);
+            if(!cursor.segment) {
+                  // no selection
+                  console.log("no selection: processing whole score");
+                  processAll = true;
+                  startStaff = 0;
+                  endStaff = curScore.nstaves;
             } else {
                   startStaff = cursor.staffIdx;
                   cursor.rewind(2);
-                  if (cursor.tick === 0) {
-                        // this happens when the selection includes
-                        // the last measure of the score.
-                        // rewind(2) goes behind the last segment (where
-                        // there's none) and sets tick=0
+                  endStaff = cursor.staffIdx+1;
+                  endTick = cursor.tick;
+                  if(endTick == 0) {
+                        // selection includes end of score
+                        // calculate tick from last score segment
                         endTick = curScore.lastSegment.tick + 1;
-                  } else {
-                        endTick = cursor.tick;
                   }
-                  endStaff = cursor.staffIdx;
+                  cursor.rewind(1);
+                  console.log("Selection is: Staves("+startStaff+"-"+endStaff+") Ticks("+cursor.tick+"-"+endTick+")");
             }
-            console.log(startStaff + " - " + endStaff + " - " + endTick)
-            for (var staff = startStaff; staff <= endStaff; staff++) {
-                  for (var voice = 0; voice < 4; voice++) {
-                        cursor.rewind(1); // sets voice to 0
-                        cursor.voice = voice; //voice has to be set after goTo
-                        cursor.staffIdx = staff;
 
-                        if (fullScore)
-                              cursor.rewind(0) // if no selection, beginning of score
+            console.log("ProcessAll is "+processAll);
 
-                        while (cursor.segment && (fullScore || cursor.tick < endTick)) {
-                              if (cursor.element && cursor.element.type === Element.CHORD) {
-                                    var graceChords = cursor.element.graceNotes;
-                                    for (var i = 0; i < graceChords.length; i++) {
-                                          // iterate through all grace chords
-                                          var graceNotes = graceChords[i].notes;
-                                          for (var j = 0; j < graceNotes.length; j++)
-                                                func(graceNotes[j], accidentalMap);
-                                    }
-                                    var notes = cursor.element.notes;
-                                    for (var k = 0; k < notes.length; k++) {
-                                          var note = notes[k];
-                                          func(note, accidentalMap);
-                                    }
-                              }
-                              if (cursor.element && cursor.element.type === Element.BAR_LINE) {
-                                    console.log("Resetting accidentals at bar line");
-                                    accidentalMap = {};
-                              }
-                              cursor.next();
-                        }
+            // go through all staves of a part simultaneously
+            // find staves that belong to the same part
+
+            var curStartStaff = startStaff;
+
+            while(curStartStaff < endStaff) {
+                  // find end staff for this part
+                  var curEndStaff = getEndStaffOfPart(curStartStaff);
+
+                  if(curEndStaff > endStaff) {
+                        curEndStaff = endStaff;
                   }
+
+                  // do the work
+                  processPart(cursor,endTick,curStartStaff*4,curEndStaff*4,tuningData);
+
+                  // next part
+                  curStartStaff = curEndStaff;
             }
+
+            //curScore.doLayout();
+            //curScore.endCmd();
+
+            console.log("end process selection");
       }
 
 }
