@@ -94,8 +94,13 @@ MuseScore {
   }
   function processNote(note, accidentalMap, tuningData) {
     var natural = getNatural(note.pitch, note.tpc);
+
+    // 1. if note carries an accidental, we're done
     var effectiveAccidental = note.accidentalType;
-    if (note.accidentalType == Accidental.NONE) {
+
+    // 2. if the pitch occurred previously in the same measure with
+    // an accidental, or it was tied to a note with an accidental, use that
+    if (effectiveAccidental == Accidental.NONE) {
       if (accidentalMap.hasOwnProperty(natural)) {
         effectiveAccidental = accidentalMap[natural];
       } else {
@@ -110,6 +115,23 @@ MuseScore {
         }
       }
     }
+
+    // 3. next rely on the standard key signature - custom key signatures
+    // can't work yet since they are not exposed in the plugin API
+    if (effectiveAccidental == Accidental.NONE) {
+      if (note.tpc < 6) {
+        effectiveAccidental = Accidental.FLAT2;
+      } else if (note.tpc < 13) {
+        effectiveAccidental = Accidental.FLAT;
+      } else if (note.tpc < 20) {
+        // really NONE
+      } else if (note.tpc < 27) {
+        effectiveAccidental = Accidental.SHARP;
+      } else {
+        effectiveAccidental = Accidental.SHARP2;
+      }
+    }
+
     console.log("pitch: " + note.pitch, ", tpc: " + note.tpc, " accidentalType: " + note.accidentalType, "effectiveAccidental: " + effectiveAccidental, "natural: " + natural);
     var absolute = computeTuning(natural, effectiveAccidental, tuningData);
     var relative = absolute - (note.pitch - 60) * 100;
