@@ -12,10 +12,9 @@ understand the format and what is possible.
 
 ## CAVEATS
 
-* Does not support key signatures.
-* Does not currently support "carrying over" accidentals from previous 
-notes in the measure, so for now you have to repeat the accidental on 
-the same pitch for it to work properly. This issue should be fixed soon.
+* Does not support custom key signatures (since they aren't exposed to 
+the plugin API yet). Only the 15 standard key signatures work, the ones 
+with single sharps and flats following the circle-of-fifths rules.
 
 ## Getting Started
 
@@ -35,5 +34,5 @@ Run the plugin and try out one of the example files.
 
 ## License
 
-This project is licensed under the GPL version 2. (Mostly just because a 
-useful chunk of code came from another plugin that was GPL2 licensed.)
+This project is licensed under the GPL version 3. (Mostly just because a 
+useful chunk of code came from another plugin that was GPL3 licensed.)
