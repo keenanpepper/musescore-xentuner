@@ -1,0 +1,11 @@
+{
+  "name": "19edo",
+  "description": "standard meantone-based notation",
+  "naturals": [189.47, 378.95, 505.26, 694.74, 884.21, 1073.68, 1200.0],
+  "accidentals": {
+    "SHARP": 63.16,
+    "FLAT": -63.16,
+    "SHARP2": 126.32,
+    "FLAT2": -126.32
+  }
+}
