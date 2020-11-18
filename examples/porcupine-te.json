@@ -1,0 +1,11 @@
+{
+  "name": "Porcupine TE",
+  "description": "2.3.5.11 TE tuning of porcupine (or \"porkypine\") temperament",
+  "naturals": [215.57, 379.7, 543.83, 707.96, 872.09, 1036.22, 1200.35],
+  "accidentals": {
+    "SHARP": 51.44,
+    "FLAT": -51.44,
+    "SHARP2": 102.88,
+    "FLAT2": -102.88
+  }
+}
