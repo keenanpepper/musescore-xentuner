@@ -32,10 +32,20 @@ MuseScore {
     anchors.right: parent.right
     text: "Apply selected tuning to score"
     onClicked: {
-      var tuningData = parseTuningFileContent(tuningFile.read());
-      console.log("tuningData: " + JSON.stringify(tuningData));
-      processSelection(tuningData);
-      Qt.quit();
+      try {
+        var tuningData = parseTuningFileContent(tuningFile.read());
+        console.log("tuningData: " + JSON.stringify(tuningData));
+      } catch (e) {
+        fileLabel.text = "JSON parse error. Make sure your file has correct JSON syntax.";
+        fileLabel.color = "red";
+        return;
+      }
+      try {
+        processSelection(tuningData);
+        Qt.quit();
+      } catch (e) {
+        fileLabel.text = "Some unknown error happened. Sorry!";
+      }
     }
   }
   Text {
@@ -141,6 +151,7 @@ MuseScore {
     if (obj.hasOwnProperty("tuningFile")) {
       tuningFile.source = obj.tuningFile;
       fileLabel.text = "Tuning file: " + obj.tuningFile;
+      fileLabel.color = "black";
     }
   }
   function writeSettings(settings) {
@@ -153,6 +164,7 @@ MuseScore {
     onAccepted: {
         tuningFile.source = fileDialog.fileUrl;
         fileLabel.text = "Tuning file: " + fileDialog.fileUrl;
+        fileLabel.color = "black";
         writeSettings({tuningFile: "" + fileDialog.fileUrl});
     }
     onRejected: {
