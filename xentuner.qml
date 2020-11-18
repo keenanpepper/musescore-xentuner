@@ -79,18 +79,13 @@ MuseScore {
       base = numPeriods * period + tuningData["naturals"][naturalIndex - 1];
     }
 
-    var accidental = getAccidentalName(accidentalType);
+    var accidental = accidentalType.toString();
     if (!tuningData["accidentals"].hasOwnProperty(accidental)) {
       return base;
     }
     var modifier = tuningData["accidentals"][accidental]
 
     return base + modifier;
-  }
-  function getAccidentalName(accidentalType) {
-    // hardcoded for now, but should use AccidentalType enum
-    var namesList = ["NONE","FLAT","NATURAL","SHARP","SHARP2","FLAT2","NATURAL_FLAT","NATURAL_SHARP","SHARP_SHARP","FLAT_ARROW_UP","FLAT_ARROW_DOWN","NATURAL_ARROW_UP","NATURAL_ARROW_DOWN","SHARP_ARROW_UP","SHARP_ARROW_DOWN","SHARP2_ARROW_UP","SHARP2_ARROW_DOWN","FLAT2_ARROW_UP","FLAT2_ARROW_DOWN","MIRRORED_FLAT","MIRRORED_FLAT2","SHARP_SLASH","SHARP_SLASH4","FLAT_SLASH2","FLAT_SLASH","SHARP_SLASH3","SHARP_SLASH2","DOUBLE_FLAT_ONE_ARROW_DOWN","FLAT_ONE_ARROW_DOWN","NATURAL_ONE_ARROW_DOWN","SHARP_ONE_ARROW_DOWN","DOUBLE_SHARP_ONE_ARROW_DOWN","DOUBLE_FLAT_ONE_ARROW_UP","FLAT_ONE_ARROW_UP","NATURAL_ONE_ARROW_UP","SHARP_ONE_ARROW_UP","DOUBLE_SHARP_ONE_ARROW_UP","DOUBLE_FLAT_TWO_ARROWS_DOWN","FLAT_TWO_ARROWS_DOWN","NATURAL_TWO_ARROWS_DOWN","SHARP_TWO_ARROWS_DOWN","DOUBLE_SHARP_TWO_ARROWS_DOWN","DOUBLE_FLAT_TWO_ARROWS_UP","FLAT_TWO_ARROWS_UP","NATURAL_TWO_ARROWS_UP","SHARP_TWO_ARROWS_UP","DOUBLE_SHARP_TWO_ARROWS_UP","DOUBLE_FLAT_THREE_ARROWS_DOWN","FLAT_THREE_ARROWS_DOWN","NATURAL_THREE_ARROWS_DOWN","SHARP_THREE_ARROWS_DOWN","DOUBLE_SHARP_THREE_ARROWS_DOWN","DOUBLE_FLAT_THREE_ARROWS_UP","FLAT_THREE_ARROWS_UP","NATURAL_THREE_ARROWS_UP","SHARP_THREE_ARROWS_UP","DOUBLE_SHARP_THREE_ARROWS_UP","LOWER_ONE_SEPTIMAL_COMMA","RAISE_ONE_SEPTIMAL_COMMA","LOWER_TWO_SEPTIMAL_COMMAS","RAISE_TWO_SEPTIMAL_COMMAS","LOWER_ONE_UNDECIMAL_QUARTERTONE","RAISE_ONE_UNDECIMAL_QUARTERTONE","LOWER_ONE_TRIDECIMAL_QUARTERTONE","RAISE_ONE_TRIDECIMAL_QUARTERTONE","DOUBLE_FLAT_EQUAL_TEMPERED","FLAT_EQUAL_TEMPERED","NATURAL_EQUAL_TEMPERED","SHARP_EQUAL_TEMPERED","DOUBLE_SHARP_EQUAL_TEMPERED","QUARTER_FLAT_EQUAL_TEMPERED","QUARTER_SHARP_EQUAL_TEMPERED","SORI","KORON"];
-    return namesList[0+accidentalType];
   }
   function processNote(note, accidentalMap, tuningData) {
     var natural = getNatural(note.pitch, note.tpc);
@@ -120,15 +115,15 @@ MuseScore {
     // can't work yet since they are not exposed in the plugin API
     if (effectiveAccidental == Accidental.NONE) {
       if (note.tpc < 6) {
-        effectiveAccidental = Accidental.FLAT2;
+        effectiveAccidental = "FLAT2";
       } else if (note.tpc < 13) {
-        effectiveAccidental = Accidental.FLAT;
+        effectiveAccidental = "FLAT";
       } else if (note.tpc < 20) {
-        // really NONE
+        effectiveAccidental = "NONE";
       } else if (note.tpc < 27) {
-        effectiveAccidental = Accidental.SHARP;
+        effectiveAccidental = "SHARP";
       } else {
-        effectiveAccidental = Accidental.SHARP2;
+        effectiveAccidental = "SHARP2";
       }
     }
 
