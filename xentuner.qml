@@ -7,7 +7,7 @@ import FileIO 3.0
 MuseScore {
   menuPath: "Plugins.Xenharmonic Tuner"
   description: "Allows microtonal retuning of both natural notes and accidentals."
-  version: "1.0"
+  version: "2.0"
   pluginType: "dialog"
   width: 377
   height: 233
@@ -24,7 +24,7 @@ MuseScore {
     anchors.left: parent.left
     text: "Cancel"
     onClicked: {
-      Qt.quit();
+      qtQuit();
     }
   }
   Button {
@@ -34,7 +34,7 @@ MuseScore {
     onClicked: {
       try {
         var tuningData = parseTuningFileContent(tuningFile.read());
-        console.log("tuningData: " + JSON.stringify(tuningData));
+        debugLog("tuningData: " + JSON.stringify(tuningData));
       } catch (e) {
         fileLabel.text = "JSON parse error. Make sure your file has correct JSON syntax.";
         fileLabel.color = "red";
@@ -42,7 +42,7 @@ MuseScore {
       }
       try {
         processSelection(tuningData);
-        Qt.quit();
+        qtQuit();
       } catch (e) {
         fileLabel.text = "Some unknown error happened. Sorry!";
       }
@@ -74,6 +74,164 @@ MuseScore {
     }
     return obj;
   }
+  function getAccidentalName(accidentalType) {
+    for (const accidentalName in Accidental) {
+      if (Accidental[accidentalName] == accidentalType)
+        return accidentalName;
+    }
+  }
+  function getCentsOffset(accidentalType) {
+    // Only for MuseScore 4.2 and later
+    // see /src/engraving/dom/accidental.cpp
+    const centsOffsets = [
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+-50,
+-150,
+50,
+-50,
+150,
+50,
+250,
+150,
+-150,
+-250,
+-50,
+50,
+-50,
+-150,
+50,
+150,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+-6.8,
+6.8,
+-3.4,
+3.4,
+-16.5,
+16.5,
+-1.7,
+1.7,
+-10.9,
+10.9,
+33,
+-67,
+-167,
+167,
+-183,
+183,
+-17,
+17,
+-33,
+33,
+-50,
+50,
+-67,
+67,
+-83,
+83,
+0,
+0,
+-116,
+116,
+-133,
+133,
+-150,
+150,
+-5.8,
+5.8,
+-21.5,
+21.5,
+-27.3,
+27.3,
+-43,
+43,
+-48.8,
+48.8,
+-53.3,
+53.3,
+-60.4,
+60.4,
+-64.9,
+64.9,
+-70.7,
+70.7,
+-86.4,
+86.4,
+-92.2,
+92.2,
+-107.9,
+107.9,
+-113.7,
+113.7,
+-22.2,
+22.2,
+-44.4,
+44.4,
+-66.7,
+66.7,
+-88.9,
+111.1
+    ]
+    debugLog("centsOffset: " + centsOffsets[0 + accidentalType]);
+    return centsOffsets[0 + accidentalType];
+  }
   function computeTuning(natural, accidentalType, tuningData) {
     // return value in cents relative to middle C
 
@@ -89,7 +247,7 @@ MuseScore {
       base = numPeriods * period + tuningData["naturals"][naturalIndex - 1];
     }
 
-    var accidental = accidentalType.toString();
+    var accidental = getAccidentalName(accidentalType);
     if (!tuningData["accidentals"].hasOwnProperty(accidental)) {
       return base;
     }
@@ -125,21 +283,26 @@ MuseScore {
     // can't work yet since they are not exposed in the plugin API
     if (effectiveAccidental == Accidental.NONE) {
       if (note.tpc < 6) {
-        effectiveAccidental = "FLAT2";
+        effectiveAccidental = Accidental.FLAT2;
       } else if (note.tpc < 13) {
-        effectiveAccidental = "FLAT";
+        effectiveAccidental = Accidental.FLAT;
       } else if (note.tpc < 20) {
-        effectiveAccidental = "NONE";
+        effectiveAccidental = Accidental.NONE;
       } else if (note.tpc < 27) {
-        effectiveAccidental = "SHARP";
+        effectiveAccidental = Accidental.SHARP;
       } else {
-        effectiveAccidental = "SHARP2";
+        effectiveAccidental = Accidental.SHARP2;
       }
     }
 
-    console.log("pitch: " + note.pitch, ", tpc: " + note.tpc, " accidentalType: " + note.accidentalType, "effectiveAccidental: " + effectiveAccidental, "natural: " + natural);
-    var absolute = computeTuning(natural, effectiveAccidental, tuningData);
-    var relative = absolute - (note.pitch - 60) * 100;
+    debugLog("pitch: " + note.pitch + " tpc: " + note.tpc + " accidentalType: " + note.accidentalType + " effectiveAccidental: " + effectiveAccidental + " natural: " + natural);
+    const absolute = computeTuning(natural, effectiveAccidental, tuningData);
+    var base = (note.pitch - 60) * 100;
+    if ((mscoreMajorVersion == 4 && mscoreMinorVersion >= 2) || mscoreMajorVersion > 4) {
+      base += getCentsOffset(effectiveAccidental);
+    }
+    const relative = absolute - base;
+    debugLog("absolute: " + absolute + " relative: " + relative);
     note.tuning = relative;
     
     // record the accidental of this natural for later unmarked pitches in this measure
@@ -173,19 +336,31 @@ MuseScore {
   FileIO {
     id: "tuningFile"
     onError: {
-      console.log(msg);
+      debugLog(msg);
     }
   }
   FileIO {
     id: "settingsFile"
     source: homePath() + "/.musescore-xentuner-settings.json"
     onError: {
-      console.log(msg);
+      debugLog(msg);
+    }
+  }
+  FileIO {
+    id: "debugFile"
+    source: homePath() + "/.musescore-xentuner-log.txt"
+    onError: {
+      console.log(msg); // can't use debugLog since it won't work
     }
   }
   onRun: {
   }
   Component.onCompleted: {
+    if (mscoreMajorVersion >= 4) {
+        title = qsTr("XenTuner")
+        categoryCode = "playback"
+    }
+
     if (settingsFile.exists()) {
       loadSettings();
     } else {
@@ -217,8 +392,8 @@ MuseScore {
             }
 
             // not found!
-            console.log("error: part for " + startStaff + " not found!");
-            Qt.quit();
+            debugLog("error: part for " + startStaff + " not found!");
+            qtQuit();
       }
 
       // function processPart
@@ -288,13 +463,13 @@ MuseScore {
       }
 
       function processSelection(tuningData) {
-            console.log("start process selection");
+            debugLog("start process selection");
 
-            //curScore.startCmd();
+            curScore.startCmd();
 
              if (typeof curScore === 'undefined' || curScore == null) {
-                   console.log("error: no score!");
-                   Qt.quit();
+                   debugLog("error: no score!");
+                   qtQuit();
              }
 
             // find selection
@@ -306,7 +481,7 @@ MuseScore {
             cursor.rewind(1);
             if(!cursor.segment) {
                   // no selection
-                  console.log("no selection: processing whole score");
+                  debugLog("no selection: processing whole score");
                   processAll = true;
                   startStaff = 0;
                   endStaff = curScore.nstaves;
@@ -321,10 +496,10 @@ MuseScore {
                         endTick = curScore.lastSegment.tick + 1;
                   }
                   cursor.rewind(1);
-                  console.log("Selection is: Staves("+startStaff+"-"+endStaff+") Ticks("+cursor.tick+"-"+endTick+")");
+                  debugLog("Selection is: Staves("+startStaff+"-"+endStaff+") Ticks("+cursor.tick+"-"+endTick+")");
             }
 
-            console.log("ProcessAll is "+processAll);
+            debugLog("ProcessAll is "+processAll);
 
             // go through all staves of a part simultaneously
             // find staves that belong to the same part
@@ -347,9 +522,15 @@ MuseScore {
             }
 
             //curScore.doLayout();
-            //curScore.endCmd();
+            curScore.endCmd();
 
-            console.log("end process selection");
+            debugLog("end process selection");
       }
-
+  function qtQuit() {
+    (typeof(quit) === 'undefined' ? Qt.quit : quit)();
+  }
+  function debugLog(msg) {
+    var prevContent = debugFile.read();
+    debugFile.write(prevContent + msg + '\n');
+  }
 }
