@@ -1,6 +1,6 @@
 # XenTuner - a MuseScore plugin
 
-This plugin is for MuseScore 3 and is intended to allow 
+This plugin is for MuseScore 4 and is intended to allow 
 microtonal/xenharmonic composition with all the accidentals MuseScore 
 supports. Since there is already good support for the graphical 
 accidentals, this plugin only affects playback. The way it works is you 
@@ -18,7 +18,7 @@ with single sharps and flats following the circle-of-fifths rules.
 
 ## Getting Started
 
-Make sure MuseScore 3.x is installed.
+Make sure MuseScore 4.x is installed.
 
 Put xentuner.qml from this project somewhere MuseScore can find it, for 
 example the default plugin folder where the other plugins are.
