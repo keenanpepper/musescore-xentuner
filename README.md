@@ -10,6 +10,17 @@ just run the plugin and a tuning adjustment will be added to each note
 so it actually sounds in your tuning. See the example files to 
 understand the format and what is possible.
 
+The "naturals" property in the tuning file must be in cents, but 
+otherwise works similarly to Scala SCL files. Namely, the first note of 
+the scale (middle C) is assumed to be 0 cents and then the given cents 
+values specify the 2nd thru (n+1)th pitches of the scale. The last one 
+is also the period of the scale in cents, e.g. for any 
+pure-octave-repeating scale it would be exactly 1200.0.
+
+The "middleCPitch" property can be used to shift the overall absolute 
+tuning of the scale by specifying the offset of middle C (in cents) from 
+the standard concert pitch of 261.6255653... Hz.
+
 ## CAVEATS
 
 * Does not support custom key signatures (since they aren't exposed to 

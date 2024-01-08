@@ -1,0 +1,26 @@
+{
+  "name": "31edo",
+  "description": "standard meantone-based notation",
+  "naturals": [193.55, 387.10, 503.23, 696.77, 890.32, 1083.87, 1200.0],
+  "middleCPitch": 9.68,
+  "accidentals": {
+    "SHARP": 77.42,
+    "FLAT": -77.42,
+    "SHARP2": 154.84,
+    "FLAT2": -154.84,
+    "FLAT_ARROW_UP": -38.71,
+    "FLAT_ARROW_DOWN": -116.13,
+    "NATURAL_ARROW_UP": 38.71,
+    "NATURAL_ARROW_DOWN": -38.71,
+    "SHARP_ARROW_UP": 116.13,
+    "SHARP_ARROW_DOWN": 38.71,
+    "SHARP2_ARROW_UP": 193.55,
+    "SHARP2_ARROW_DOWN": 116.13,
+    "FLAT2_ARROW_UP": -116.13,
+    "FLAT2_ARROW_DOWN": -193.55,
+    "MIRRORED_FLAT": -38.71,
+    "MIRRORED_FLAT2": -116.13,
+    "SHARP_SLASH": 38.71,
+    "SHARP_SLASH4": 116.13
+  }
+}

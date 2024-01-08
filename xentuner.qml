@@ -240,11 +240,15 @@ MuseScore {
     if (naturalIndex < 0) naturalIndex += numNaturals;
     var numPeriods = (natural - naturalIndex) / numNaturals;
     var period = tuningData["naturals"][numNaturals - 1];
+    var middleCPitch = tuningData["middleCPitch"]
+    if (!middleCPitch) {
+      middleCPitch = 0;
+    }
     var base;
     if (naturalIndex == 0) {
-      base = numPeriods * period;
+      base = middleCPitch + numPeriods * period;
     } else {
-      base = numPeriods * period + tuningData["naturals"][naturalIndex - 1];
+      base = middleCPitch + numPeriods * period + tuningData["naturals"][naturalIndex - 1];
     }
 
     var accidental = getAccidentalName(accidentalType);
