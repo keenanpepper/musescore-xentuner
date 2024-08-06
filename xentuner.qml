@@ -407,6 +407,17 @@ MuseScore {
       // We go through all tracks simultaneously, because we also want to tune
       // accidentals for notes of different voices in the same octave
 
+      function tuneGrace (segment, curMeasureArray, tuningData) {
+          var graceChords = segment.elementAt(track).graceNotes;
+
+          for(var j=0;j<graceChords.length;j++) {
+              var notes = graceChords[j].notes;
+              for(var i=0;i<notes.length;i++) {
+                  processNote(notes[i],curMeasureArray,tuningData);
+              }
+          }
+      }
+
       function processPart(cursor,endTick,startTrack,endTrack,tuningData) {
             if(processAll) {
                   // we need to reset track first, otherwise
@@ -444,14 +455,7 @@ MuseScore {
                         if(segment.elementAt(track) && segment.elementAt(track).type == Element.CHORD) {
                               // process graceNotes if present
                               if(segment.elementAt(track).graceNotes.length > 0) {
-                                    var graceChords = segment.elementAt(track).graceNotes;
-
-                                    for(var j=0;j<graceChords.length;j++) {
-                                          var notes = graceChords[j].notes;
-                                          for(var i=0;i<notes.length;i++) {
-                                                processNote(notes[i],curMeasureArray,tuningData);
-                                          }
-                                    }
+                                  tuneGrace(segment, curMeasureArray, tuningData);
                               }
 
                               // process notes
