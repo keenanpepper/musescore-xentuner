@@ -1,13 +1,12 @@
 import QtQuick 2.9
 import MuseScore 3.0
-import QtQuick.Controls 1.5
-import QtQuick.Dialogs 1.2
+import QtQuick.Controls 2.2
 import FileIO 3.0
 
 MuseScore {
   menuPath: "Plugins.Xenharmonic Tuner"
   description: "Allows microtonal retuning of both natural notes and accidentals."
-  version: "2.0"
+  version: "2.1"
   pluginType: "dialog"
   width: 377
   height: 233
@@ -16,7 +15,7 @@ MuseScore {
     text: "Select tuning file"
     anchors.centerIn: parent
     onClicked: {
-      fileDialog.open();
+      fileDialog.visible = true;
     }
   }
   Button {
@@ -326,13 +325,13 @@ MuseScore {
   }
   FileDialog {
     id: fileDialog
+    type: FileDialog.Load
     title: "Please choose a file"
-    folder: shortcuts.home
     onAccepted: {
-        tuningFile.source = fileDialog.fileUrl;
-        fileLabel.text = "Tuning file: " + fileDialog.fileUrl;
+        tuningFile.source = fileDialog.filePath;
+        fileLabel.text = "Tuning file: " + fileDialog.filePath;
         fileLabel.color = "black";
-        writeSettings({tuningFile: "" + fileDialog.fileUrl});
+        writeSettings({tuningFile: "" + fileDialog.filePath});
     }
     onRejected: {
     }

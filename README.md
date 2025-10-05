@@ -29,7 +29,7 @@ with single sharps and flats following the circle-of-fifths rules.
 
 ## Getting Started
 
-Make sure MuseScore 4.x is installed.
+Make sure MuseScore 4.4 or later is installed (tested with 4.5.2).
 
 Put xentuner.qml from this project somewhere MuseScore can find it, for 
 example the default plugin folder where the other plugins are.
